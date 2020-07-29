@@ -1,0 +1,16 @@
+version: "3"
+services:
+  zcoind:
+    container_name: zrs-zcoind
+    image: zcoinofficial/zcoind
+    command: -regtest -elysium -rpcuser=zrs -rpcpassword=zrs -rpcallowip=0.0.0.0/0 -zmqpubhashblock=tcp://0.0.0.0:28332 -printtoconsole
+    ports:
+    - "127.0.0.1:28332:28332"
+    - "127.0.0.1:28888:28888"
+  postgres:
+    container_name: zrs-postgres
+    image: postgres:12
+    ports:
+    - "127.0.0.1:5432:5432"
+    environment:
+      POSTGRES_PASSWORD: zrs

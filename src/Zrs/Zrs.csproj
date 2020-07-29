@@ -4,5 +4,15 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Zsharp.Bitcoin" Version="1.1.0" />
+    <PackageReference Include="Zsharp.Elysium" Version="1.1.0" />
+    <PackageReference Include="Zsharp.LightweightIndexer" Version="1.1.0" />
+    <PackageReference Include="Zsharp.LightweightIndexer.Entity" Version="1.1.0" />
+    <PackageReference Include="Zsharp.LightweightIndexer.Postgres" Version="1.1.0" />
+    <PackageReference Include="Zsharp.Rpc.Client" Version="1.1.0" />
+    <PackageReference Include="Zsharp.ServiceModel.AspNetCore" Version="1.0.0" />
+  </ItemGroup>
+
 
 </Project>
