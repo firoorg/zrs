@@ -8,6 +8,7 @@ namespace Zrs
     using Microsoft.Extensions.Hosting;
     using NBitcoin;
     using NBitcoin.RPC;
+    using Zrs.Options;
 
     sealed class Startup
     {
@@ -18,9 +19,28 @@ namespace Zrs
 
         public IConfiguration Configuration { get; }
 
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        {
+            // Build request processing pipeline so the order is very importance here.
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
+
+            app.UseServiceExceptionHandler("/service-error");
+            app.UseRouting();
+
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+            });
+        }
+
         public void ConfigureServices(IServiceCollection services)
         {
             // Application Services.
+            this.ConfigureApiOptions(services, this.Configuration.GetSection("Api"));
+
             services.AddHostedService<DatabaseMigrator>();
 
             // Zsharp Services.
@@ -49,21 +69,12 @@ namespace Zrs
             services.AddControllers();
         }
 
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        void ConfigureApiOptions(IServiceCollection services, IConfigurationSection section)
         {
-            // Build request processing pipeline so the order is very importance here.
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-            }
-
-            app.UseServiceExceptionHandler("/service-error");
-            app.UseRouting();
-
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapControllers();
-            });
+            services
+                .AddOptions<BlocksApiOptions>()
+                .Bind(section.GetSection("Blocks"))
+                .ValidateDataAnnotations();
         }
     }
 }

@@ -19,7 +19,7 @@
         }
 
         [Route("service-error")]
-        public ActionResult ServiceError()
+        public IActionResult ServiceError()
         {
             var feature = HttpContext.Features.Get<ServiceExceptionFeature>();
             var details = new ProblemDetails()
