@@ -1,6 +1,8 @@
 namespace Zrs
 {
     using System;
+    using System.Collections.Generic;
+    using System.Text.Json.Serialization;
     using Microsoft.AspNetCore.Builder;
     using Microsoft.AspNetCore.Hosting;
     using Microsoft.Extensions.Configuration;
@@ -66,7 +68,12 @@ namespace Zrs
             });
 
             // ASP.NET Core Services.
-            services.AddControllers();
+            services
+                .AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    this.RegisterJsonConverters(options.JsonSerializerOptions.Converters);
+                });
         }
 
         void ConfigureApiOptions(IServiceCollection services, IConfigurationSection section)
@@ -75,6 +82,11 @@ namespace Zrs
                 .AddOptions<BlocksApiOptions>()
                 .Bind(section.GetSection("Blocks"))
                 .ValidateDataAnnotations();
+        }
+
+        void RegisterJsonConverters(IList<JsonConverter> converters)
+        {
+            converters.Add(new Converters.UInt256());
         }
     }
 }

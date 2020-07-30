@@ -1,12 +1,7 @@
 namespace Zrs.Models
 {
-    using System;
-
-    public sealed class BlockSummary
+    public sealed class BlockSummary : BlockInformation
     {
-        public int Height { get; set; }
-        public string? Hash { get; set; }
-        public DateTime Time { get; set; }
-        public TransactionsSummary? Tx { get; set; }
+        public TransactionsSummary? Transaction { get; set; }
     }
 }

@@ -4,5 +4,7 @@ namespace Zrs.Models
     {
         public int Count { get; set; }
         public int Elysium { get; set; }
+        public int ZerocoinSpend { get; set; }
+        public int SigmaSpend { get; set; }
     }
 }
