@@ -2,9 +2,12 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="5.5.1" />
     <PackageReference Include="Zsharp.Bitcoin" Version="1.1.0" />
     <PackageReference Include="Zsharp.Elysium" Version="1.1.0" />
     <PackageReference Include="Zsharp.LightweightIndexer" Version="1.1.0" />

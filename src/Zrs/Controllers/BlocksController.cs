@@ -1,5 +1,6 @@
 namespace Zrs.Controllers
 {
+    using System.Collections.Generic;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
@@ -40,7 +41,18 @@ namespace Zrs.Controllers
             int v => v
         };
 
+        /// <summary>
+        /// Retrieves a specific block by height.
+        /// </summary>
+        /// <param name="height">
+        /// The block height to retrieve.
+        /// </param>
+        /// <param name="cancellationToken">
+        /// </param>
+        /// <response code="404">The specified height is not valid.</response>
         [HttpGet("{height:int}")]
+        [ProducesResponseType(typeof(BlockDetails), 200)]
+        [ProducesResponseType(404)]
         public async Task<IActionResult> GetBlockAsync(int height, CancellationToken cancellationToken = default)
         {
             if (height < 0)
@@ -55,10 +67,21 @@ namespace Zrs.Controllers
                 return this.NotFound();
             }
 
-            return this.CreateBlockDetailsResponse(height, block);
+            return this.Ok(new BlockDetails(height, block));
         }
 
+        /// <summary>
+        /// Retrieves a specific block by hash.
+        /// </summary>
+        /// <param name="hash">
+        /// The block hash to retrieve.
+        /// </param>
+        /// <param name="cancellationToken">
+        /// </param>
+        /// <response code="404">The specified hash is not valid.</response>
         [HttpGet("{hash:uint256}")]
+        [ProducesResponseType(typeof(BlockDetails), 200)]
+        [ProducesResponseType(404)]
         public async Task<IActionResult> GetBlockAsync(uint256 hash, CancellationToken cancellationToken = default)
         {
             var (block, height) = await this.blocks.GetBlockAsync(hash, cancellationToken);
@@ -68,10 +91,21 @@ namespace Zrs.Controllers
                 return this.NotFound();
             }
 
-            return this.CreateBlockDetailsResponse(height, block);
+            return this.Ok(new BlockDetails(height, block));
         }
 
+        /// <summary>
+        /// Retrieves latest blocks.
+        /// </summary>
+        /// <param name="limit">
+        /// Maximum number of latest blocks to return.
+        /// </param>
+        /// <param name="cancellationToken">
+        /// </param>
+        /// <response code="400"><paramref name="limit"/> is not a valid value.</response>
         [HttpGet]
+        [ProducesResponseType(typeof(IEnumerable<BlockSummary>), 200)]
+        [ProducesResponseType(400)]
         public async Task<IActionResult> ListBlockAsync(int? limit, CancellationToken cancellationToken = default)
         {
             // Validate parameters.
@@ -117,75 +151,7 @@ namespace Zrs.Controllers
             }
 
             // Block summary.
-            var result = new BlockSummary()
-            {
-                Transaction = tx,
-            };
-
-            BlockInformation.Populate(result, block, height);
-
-            return result;
-        }
-
-        TransactionSummary CreateTransactionSummary(Transaction tx)
-        {
-            // Common properties.
-            TransactionSummary result = tx.Version switch
-            {
-                3 => new ExtendedTransactionSummary()
-                {
-                    Type = (int)tx.GetTransactionType(),
-                },
-                _ => new NormalTransactionSummary()
-                {
-                    CoinBase = tx.IsCoinBase,
-                },
-            };
-
-            result.Hash = tx.GetHash();
-            result.Version = tx.Version;
-            result.LockTime = tx.LockTime.IsHeightLock ? (object)tx.LockTime.Height : tx.LockTime.Date;
-
-            foreach (var i in tx.Inputs)
-            {
-                if (i.IsZerocoinSpend() || i.IsZerocoinRemint())
-                {
-                    result.ZerocoinSpend++;
-                }
-
-                if (i.IsSigmaSpend())
-                {
-                    result.SigmaSpend++;
-                }
-            }
-
-            // Elysium.
-            var elysium = tx.GetElysiumTransaction();
-
-            if (elysium != null)
-            {
-                result.Elysium = new ElysiumTransactionSummary()
-                {
-                    Sender = elysium.Sender,
-                    Receiver = elysium.Receiver,
-                    Type = elysium.Id,
-                    Version = elysium.Version,
-                };
-            }
-
-            return result;
-        }
-
-        IActionResult CreateBlockDetailsResponse(int height, Block block)
-        {
-            var response = new BlockDetails()
-            {
-                Transactions = block.Transactions.Select(this.CreateTransactionSummary),
-            };
-
-            BlockInformation.Populate(response, block, height);
-
-            return this.Ok(response);
+            return new BlockSummary(height, block.Header, tx);
         }
     }
 }

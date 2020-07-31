@@ -19,6 +19,7 @@
         }
 
         [Route("service-error")]
+        [ApiExplorerSettings(IgnoreApi = true)]
         public IActionResult ServiceError()
         {
             var feature = HttpContext.Features.Get<ServiceExceptionFeature>();

@@ -3,6 +3,8 @@ namespace Zrs
     using System;
     using System.Collections.Generic;
     using System.ComponentModel;
+    using System.IO;
+    using System.Reflection;
     using System.Text.Json.Serialization;
     using Microsoft.AspNetCore.Builder;
     using Microsoft.AspNetCore.Hosting;
@@ -10,9 +12,12 @@ namespace Zrs
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Hosting;
+    using Microsoft.OpenApi.Models;
     using NBitcoin;
     using NBitcoin.RPC;
+    using Swashbuckle.AspNetCore.SwaggerGen;
     using Zrs.Options;
+    using Zrs.Swagger;
 
     sealed class Startup
     {
@@ -31,9 +36,18 @@ namespace Zrs
                 app.UseDeveloperExceptionPage();
             }
 
+            app.UseSwagger(options =>
+            {
+                options.RouteTemplate = "/{documentName}.json";
+            });
+            app.UseSwaggerUI(options =>
+            {
+                options.DocumentTitle = "Zcoin REST Service";
+                options.RoutePrefix = string.Empty;
+                options.SwaggerEndpoint("/openapi.json", "Zcoin REST Service");
+            });
             app.UseServiceExceptionHandler("/service-error");
             app.UseRouting();
-
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
@@ -42,13 +56,13 @@ namespace Zrs
 
         public void ConfigureServices(IServiceCollection services)
         {
-            // Application Services.
+            // Application services.
             this.RegisterRuntimeConverters();
             this.ConfigureApiOptions(services, this.Configuration.GetSection("Api"));
 
             services.AddHostedService<DatabaseMigrator>();
 
-            // Zsharp Services.
+            // Zsharp services.
             services.AddServiceExceptionHandler();
             services.AddZcoin(Enum.Parse<NetworkType>(this.Configuration["Zcoin:Network"]));
             services.AddElysiumSerializer();
@@ -70,7 +84,7 @@ namespace Zrs
                 options.ConnectionString = this.Configuration["Database:Blockchain:ConnectionString"];
             });
 
-            // ASP.NET Core Services.
+            // ASP.NET Core services.
             services.Configure<RouteOptions>(options =>
             {
                 options.ConstraintMap.Add("uint256", typeof(Constraints.UInt256));
@@ -81,7 +95,14 @@ namespace Zrs
                 .AddJsonOptions(options =>
                 {
                     this.RegisterJsonConverters(options.JsonSerializerOptions.Converters);
+                })
+                .ConfigureApiBehaviorOptions(options =>
+                {
+                    options.SuppressMapClientErrors = true;
                 });
+
+            // Swashbuckle services.
+            services.AddSwaggerGen(this.ConfigureSwaggerGenerator);
         }
 
         void ConfigureApiOptions(IServiceCollection services, IConfigurationSection section)
@@ -110,6 +131,24 @@ namespace Zrs
             {
                 converters.Add(converter);
             }
+        }
+
+        void ConfigureSwaggerGenerator(SwaggerGenOptions options)
+        {
+            var document = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+
+            options.SwaggerDoc("openapi", new OpenApiInfo()
+            {
+                Title = "Zcoin REST Service",
+                Version = "1.0.0",
+            });
+
+            options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, document));
+
+            options.MapType<uint256>(() => new OpenApiSchema() { Type = "string" });
+            options.MapType<BitcoinAddress>(() => new OpenApiSchema() { Type = "string" });
+
+            options.SchemaFilter<SchemaFilter>();
         }
     }
 }
