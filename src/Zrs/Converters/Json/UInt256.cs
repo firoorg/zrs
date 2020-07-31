@@ -1,4 +1,4 @@
-namespace Zrs.Converters
+namespace Zrs.Converters.Json
 {
     using System;
     using System.Text.Json;

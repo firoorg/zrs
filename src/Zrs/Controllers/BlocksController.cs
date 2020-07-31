@@ -40,11 +40,9 @@ namespace Zrs.Controllers
             int v => v
         };
 
-        [HttpGet]
-        [Route("{height}")]
+        [HttpGet("{height:int}")]
         public async Task<IActionResult> GetBlockAsync(int height, CancellationToken cancellationToken = default)
         {
-            // Load block.
             if (height < 0)
             {
                 return this.NotFound();
@@ -57,15 +55,20 @@ namespace Zrs.Controllers
                 return this.NotFound();
             }
 
-            // Construct response.
-            var response = new BlockDetails()
+            return this.CreateBlockDetailsResponse(height, block);
+        }
+
+        [HttpGet("{hash:uint256}")]
+        public async Task<IActionResult> GetBlockAsync(uint256 hash, CancellationToken cancellationToken = default)
+        {
+            var (block, height) = await this.blocks.GetBlockAsync(hash, cancellationToken);
+
+            if (block == null)
             {
-                Transactions = block.Transactions.Select(this.CreateTransactionSummary),
-            };
+                return this.NotFound();
+            }
 
-            BlockInformation.Populate(response, block, height);
-
-            return this.Ok(response);
+            return this.CreateBlockDetailsResponse(height, block);
         }
 
         [HttpGet]
@@ -171,6 +174,18 @@ namespace Zrs.Controllers
             }
 
             return result;
+        }
+
+        IActionResult CreateBlockDetailsResponse(int height, Block block)
+        {
+            var response = new BlockDetails()
+            {
+                Transactions = block.Transactions.Select(this.CreateTransactionSummary),
+            };
+
+            BlockInformation.Populate(response, block, height);
+
+            return this.Ok(response);
         }
     }
 }

@@ -2,9 +2,11 @@ namespace Zrs
 {
     using System;
     using System.Collections.Generic;
+    using System.ComponentModel;
     using System.Text.Json.Serialization;
     using Microsoft.AspNetCore.Builder;
     using Microsoft.AspNetCore.Hosting;
+    using Microsoft.AspNetCore.Routing;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Hosting;
@@ -41,6 +43,7 @@ namespace Zrs
         public void ConfigureServices(IServiceCollection services)
         {
             // Application Services.
+            this.RegisterRuntimeConverters();
             this.ConfigureApiOptions(services, this.Configuration.GetSection("Api"));
 
             services.AddHostedService<DatabaseMigrator>();
@@ -68,6 +71,11 @@ namespace Zrs
             });
 
             // ASP.NET Core Services.
+            services.Configure<RouteOptions>(options =>
+            {
+                options.ConstraintMap.Add("uint256", typeof(Constraints.UInt256));
+            });
+
             services
                 .AddControllers()
                 .AddJsonOptions(options =>
@@ -84,9 +92,24 @@ namespace Zrs
                 .ValidateDataAnnotations();
         }
 
+        void RegisterRuntimeConverters()
+        {
+            Register(typeof(uint256), typeof(Converters.Runtime.UInt256));
+
+            static void Register(Type type, Type converter)
+            {
+                TypeDescriptor.AddAttributes(type, new TypeConverterAttribute(converter));
+            }
+        }
+
         void RegisterJsonConverters(IList<JsonConverter> converters)
         {
-            converters.Add(new Converters.UInt256());
+            Register(new Converters.Json.UInt256());
+
+            void Register(JsonConverter converter)
+            {
+                converters.Add(converter);
+            }
         }
     }
 }
